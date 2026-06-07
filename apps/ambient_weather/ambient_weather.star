@@ -161,9 +161,9 @@ def main(config):
     rain_today = latest.get("dailyrainin") or 0.0
     rain_rate = latest.get("rainratein") or 0.0
 
-    temp_plot = make_sparkline(smooth(build_plot_data(records, "tempf"), 5), TEMP_COLOR, TEMP_FILL)
-    humid_plot = make_sparkline(smooth(build_plot_data(records, "humidity"), 5), HUMID_COLOR, HUMID_FILL)
-    dew_plot = make_sparkline(smooth(build_plot_data(records, "dewPoint"), 5), DEW_COLOR, DEW_FILL)
+    temp_plot = make_sparkline(smooth(build_plot_data(records, "tempf"), 9), TEMP_COLOR, TEMP_FILL)
+    humid_plot = make_sparkline(smooth(build_plot_data(records, "humidity"), 9), HUMID_COLOR, HUMID_FILL)
+    dew_plot = make_sparkline(smooth(build_plot_data(records, "dewPoint"), 9), DEW_COLOR, DEW_FILL)
 
     rain_row = render.Row(
         expanded = True,
