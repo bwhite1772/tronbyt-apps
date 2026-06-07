@@ -6,13 +6,13 @@ API_BASE = "https://rt.ambientweather.net/v1"
 CHART_W = 42
 ROW_H = 8
 
-TEMP_COLOR = "#FF9500"
-TEMP_FILL = "#3D2000"
+TEMP_COLOR = "#FF6B35"
+TEMP_FILL = "#3D1800"
 HUMID_COLOR = "#4FC3F7"
 HUMID_FILL = "#003D5C"
-DEW_COLOR = "#00E5CC"
-DEW_FILL = "#003340"
-RAIN_COLOR = "#4FC3F7"
+DEW_COLOR = "#A8D8A8"
+DEW_FILL = "#1A3D1A"
+RAIN_COLOR = "#90CAF9"
 
 def get_schema():
     return schema.Schema(
@@ -90,11 +90,11 @@ def spark_row(value_str, color, sparkline):
         ],
     )
 
-def fmt_temp(val):
-    return "%d°F" % int(val + 0.5)
+def fmt_temp(val, prefix):
+    return "%s%d°F" % (prefix, int(val + 0.5))
 
 def fmt_humid(val):
-    return "%d%%" % int(val + 0.5)
+    return "H:%d%%" % int(val + 0.5)
 
 def fmt_rain(val):
     rounded = int(val * 100 + 0.5)
@@ -161,9 +161,9 @@ def main(config):
     return render.Root(
         child = render.Column(
             children = [
-                spark_row(fmt_temp(temp), TEMP_COLOR, temp_plot),
+                spark_row(fmt_temp(temp, "T:"), TEMP_COLOR, temp_plot),
                 spark_row(fmt_humid(humidity), HUMID_COLOR, humid_plot),
-                spark_row(fmt_temp(dew), DEW_COLOR, dew_plot),
+                spark_row(fmt_temp(dew, "D:"), DEW_COLOR, dew_plot),
                 rain_row,
             ],
         ),
