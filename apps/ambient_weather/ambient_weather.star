@@ -43,6 +43,25 @@ def get_schema():
         ],
     )
 
+def smooth(data, window):
+    n = len(data)
+    if n < window:
+        return data
+    half = window // 2
+    result = []
+    for i in range(n):
+        start = i - half
+        end = i + half + 1
+        if start < 0:
+            start = 0
+        if end > n:
+            end = n
+        total = 0.0
+        for j in range(start, end):
+            total += data[j][1]
+        result.append((data[i][0], total / (end - start)))
+    return result
+
 def build_plot_data(records, field):
     vals = []
     for r in records:
@@ -142,9 +161,9 @@ def main(config):
     rain_today = latest.get("dailyrainin") or 0.0
     rain_rate = latest.get("rainratein") or 0.0
 
-    temp_plot = make_sparkline(build_plot_data(records, "tempf"), TEMP_COLOR, TEMP_FILL)
-    humid_plot = make_sparkline(build_plot_data(records, "humidity"), HUMID_COLOR, HUMID_FILL)
-    dew_plot = make_sparkline(build_plot_data(records, "dewPoint"), DEW_COLOR, DEW_FILL)
+    temp_plot = make_sparkline(smooth(build_plot_data(records, "tempf"), 5), TEMP_COLOR, TEMP_FILL)
+    humid_plot = make_sparkline(smooth(build_plot_data(records, "humidity"), 5), HUMID_COLOR, HUMID_FILL)
+    dew_plot = make_sparkline(smooth(build_plot_data(records, "dewPoint"), 5), DEW_COLOR, DEW_FILL)
 
     rain_row = render.Row(
         expanded = True,
