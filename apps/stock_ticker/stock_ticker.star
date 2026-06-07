@@ -27,22 +27,28 @@ def get_schema():
         ],
     )
 
+def add_commas(s):
+    n = len(s)
+    result = ""
+    for i in range(n):
+        if i > 0 and (n - i) % 3 == 0:
+            result += ","
+        result += s[i]
+    return result
+
 def fmt_float(val, decimals):
     negative = val < 0
     val = -val if negative else val
-    if decimals == 0:
-        result = str(int(val + 0.5))
-    else:
-        factor = 10 if decimals == 1 else 100
-        rounded = int(val * factor + 0.5)
-        whole = rounded // factor
-        frac = rounded % factor
-        frac_str = str(frac)
-        if len(frac_str) < decimals:
-            frac_str = "0" + frac_str
-        if len(frac_str) < decimals:
-            frac_str = "0" + frac_str
-        result = "%d.%s" % (whole, frac_str)
+    factor = 10 if decimals == 1 else 100
+    rounded = int(val * factor + 0.5)
+    whole = rounded // factor
+    frac = rounded % factor
+    frac_str = str(frac)
+    if len(frac_str) < decimals:
+        frac_str = "0" + frac_str
+    if len(frac_str) < decimals:
+        frac_str = "0" + frac_str
+    result = "%s.%s" % (add_commas(str(whole)), frac_str)
     if negative:
         result = "-" + result
     return result
@@ -76,8 +82,8 @@ def main(config):
     fill_color = "#004418" if change >= 0 else "#3D0000"
 
     if is_index:
-        price_str = fmt_float(price, 0)
-        change_str = "%s%s" % (sign, fmt_float(abs_change, 0))
+        price_str = fmt_float(price, 2)
+        change_str = "%s%s" % (sign, fmt_float(abs_change, 2))
     else:
         price_str = "$%s" % fmt_float(price, 2)
         change_str = "%s$%s" % (sign, fmt_float(abs_change, 2))
