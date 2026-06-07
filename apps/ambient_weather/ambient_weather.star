@@ -3,7 +3,8 @@ load("http.star", "http")
 load("schema.star", "schema")
 
 API_BASE = "https://rt.ambientweather.net/v1"
-CHART_W = 42
+LABEL_W = 24
+CHART_W = 40
 ROW_H = 8
 
 TEMP_COLOR = "#FF6B35"
@@ -81,11 +82,8 @@ def make_sparkline(data, color, fill_color):
 
 def spark_row(value_str, color, sparkline):
     return render.Row(
-        expanded = True,
-        main_align = "space_between",
-        cross_align = "center",
         children = [
-            render.Text(content = value_str, color = color, font = "tb-8"),
+            render.Box(width = LABEL_W, height = ROW_H, child = render.Text(content = value_str, color = color, font = "tb-8")),
             sparkline,
         ],
     )
