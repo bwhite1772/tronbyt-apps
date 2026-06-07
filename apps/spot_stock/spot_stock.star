@@ -1,39 +1,66 @@
 load("render.star", "render")
 load("http.star", "http")
+load("schema.star", "schema")
 
-SYMBOL = "SPOT"
-URL = "https://query1.finance.yahoo.com/v8/finance/chart/SPOT?interval=5m&range=1d"
-SPOTIFY_GREEN = "#1DB954"
 CHART_WIDTH = 52
 CHART_HEIGHT = 16
-TRADING_MINUTES = 390  # 9:30 AM to 4:00 PM
+TRADING_MINUTES = 390
+
+INDEX_NAMES = {
+    "^DJI": "DOW",
+    "^GSPC": "S&P",
+    "^IXIC": "NDQ",
+    "^RUT": "RUT",
+}
+
+def get_schema():
+    return schema.Schema(
+        version = "1",
+        fields = [
+            schema.Text(
+                id = "symbol",
+                name = "Ticker Symbol",
+                desc = "Stock or index ticker (e.g. AAPL, ^GSPC, ^DJI, ^IXIC, ^RUT)",
+                icon = "chartLine",
+                default = "SPOT",
+            ),
+        ],
+    )
 
 def fmt_float(val, decimals):
     negative = val < 0
     val = -val if negative else val
-    factor = 10 if decimals == 1 else 100
-    rounded = int(val * factor + 0.5)
-    whole = rounded // factor
-    frac = rounded % factor
-    frac_str = str(frac)
-    if len(frac_str) < decimals:
-        frac_str = "0" + frac_str
-    if len(frac_str) < decimals:
-        frac_str = "0" + frac_str
-    result = "%d.%s" % (whole, frac_str)
+    if decimals == 0:
+        result = str(int(val + 0.5))
+    else:
+        factor = 10 if decimals == 1 else 100
+        rounded = int(val * factor + 0.5)
+        whole = rounded // factor
+        frac = rounded % factor
+        frac_str = str(frac)
+        if len(frac_str) < decimals:
+            frac_str = "0" + frac_str
+        if len(frac_str) < decimals:
+            frac_str = "0" + frac_str
+        result = "%d.%s" % (whole, frac_str)
     if negative:
         result = "-" + result
     return result
 
 def main(config):
-    rep = http.get(URL, headers = {"User-Agent": "Mozilla/5.0"}, ttl_seconds = 300)
+    symbol = (config.get("symbol") or "SPOT").upper().strip()
+    is_index = symbol.startswith("^")
+    display_name = INDEX_NAMES.get(symbol) or symbol
+    url = "https://query1.finance.yahoo.com/v8/finance/chart/%s?interval=5m&range=1d" % symbol
+
+    rep = http.get(url, headers = {"User-Agent": "Mozilla/5.0"}, ttl_seconds = 300)
     if rep.status_code != 200:
-        return error_screen("HTTP %d" % rep.status_code)
+        return error_screen(display_name, "HTTP %d" % rep.status_code)
 
     data = rep.json()
     results = (data.get("chart") or {}).get("result") or []
     if not results:
-        return error_screen("no data")
+        return error_screen(display_name, "no data")
 
     result = results[0]
     meta = result["meta"]
@@ -48,12 +75,19 @@ def main(config):
     change_color = "#00DD55" if change >= 0 else "#FF4444"
     fill_color = "#004418" if change >= 0 else "#3D0000"
 
-    # Build intraday chart data
+    if is_index:
+        price_str = fmt_float(price, 0)
+        change_str = "%s%s" % (sign, fmt_float(abs_change, 0))
+    else:
+        price_str = "$%s" % fmt_float(price, 2)
+        change_str = "%s$%s" % (sign, fmt_float(abs_change, 2))
+
+    pct_str = "%s%s%%" % (sign, fmt_float(abs_pct, 1))
+
     timestamps = result.get("timestamp") or []
     quotes = ((result.get("indicators") or {}).get("quote") or [{}])[0]
     closes = quotes.get("close") or []
 
-    # Anchor x-axis to the first bar (9:30 AM open)
     market_open_ts = timestamps[0] if timestamps else None
 
     plot_data = []
@@ -104,16 +138,16 @@ def main(config):
                     expanded = True,
                     main_align = "space_between",
                     children = [
-                        render.Text(content = SYMBOL, color = SPOTIFY_GREEN, font = "tb-8"),
-                        render.Text(content = "%s$%s" % (sign, fmt_float(abs_change, 2)), color = change_color, font = "tb-8"),
+                        render.Text(content = display_name, color = "#FFFFFF", font = "tb-8"),
+                        render.Text(content = change_str, color = change_color, font = "tb-8"),
                     ],
                 ),
                 render.Row(
                     expanded = True,
                     main_align = "space_between",
                     children = [
-                        render.Text(content = "$%s" % fmt_float(price, 2), color = "#FFFFFF", font = "tb-8"),
-                        render.Text(content = "%s%s%%" % (sign, fmt_float(abs_pct, 1)), color = change_color, font = "tb-8"),
+                        render.Text(content = price_str, color = "#FFFFFF", font = "tb-8"),
+                        render.Text(content = pct_str, color = change_color, font = "tb-8"),
                     ],
                 ),
                 chart,
@@ -121,11 +155,11 @@ def main(config):
         ),
     )
 
-def error_screen(msg):
+def error_screen(display_name, msg):
     return render.Root(
         child = render.Column(
             children = [
-                render.Text(content = SYMBOL, color = SPOTIFY_GREEN, font = "tb-8"),
+                render.Text(content = display_name, color = "#FFFFFF", font = "tb-8"),
                 render.Text(content = "error", color = "#FF4444", font = "tb-8"),
                 render.Text(content = msg, color = "#888888", font = "tb-8"),
             ],
