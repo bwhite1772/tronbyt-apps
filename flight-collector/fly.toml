@@ -11,9 +11,14 @@ primary_region = "iad"
   POLL_INTERVAL_SECONDS = "15"
   STALE_AFTER_SECONDS = "90"
   DB_PATH = "/data/flights.db"
+  FR24_FALLBACK_MIN_INTERVAL_SECONDS = "60"
 
-# LAT and LON are set via `fly secrets set LAT=... LON=...` instead of here,
-# since fly.toml is checked into git and this is your home location.
+# LAT, LON, and (optionally) FR24_API_KEY are set via `fly secrets set`
+# instead of here, since fly.toml is checked into git: LAT/LON are your
+# home location, and FR24_API_KEY is a credential. FR24_API_KEY is
+# optional — omit it to run on airplanes.live alone. When set, FR24 is
+# only called as a fallback on polls where airplanes.live sees nothing in
+# range, throttled to at most one call per FR24_FALLBACK_MIN_INTERVAL_SECONDS.
 
 [mounts]
   source = "flight_data"
