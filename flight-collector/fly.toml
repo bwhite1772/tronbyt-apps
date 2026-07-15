@@ -1,0 +1,32 @@
+# Rename this app and set primary_region to match your existing Tronbyt
+# Fly app before deploying: `fly launch --no-deploy` will create/overwrite
+# this file interactively if you'd rather start from scratch.
+app = "overhead-flights-collector"
+primary_region = "iad"
+
+[build]
+
+[env]
+  RADIUS_NM = "15"
+  POLL_INTERVAL_SECONDS = "15"
+  STALE_AFTER_SECONDS = "90"
+  DB_PATH = "/data/flights.db"
+
+# LAT and LON are set via `fly secrets set LAT=... LON=...` instead of here,
+# since fly.toml is checked into git and this is your home location.
+
+[mounts]
+  source = "flight_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1
